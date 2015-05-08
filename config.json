@@ -1,15 +1,41 @@
 {
-    "name": "Senthilnathan",
-    "email": "elephantventurestester@gmail.com",
-    "username": "elephantventurestester@gmail.com",
-    "password": "ereIamJH",
-    "imap": {
-        "host": "imap.gmail.com",
-        "port": 993,
-        "secure": true
+  "messages": [
+    {
+      "body": {
+        "id": "3",
+        "email": "evdhtester@gmail.com",
+        "password": "#Abc123!",
+        "token": "",
+        "worker_id": "",
+        "worker_ip": "",
+        "imap": {
+          "host": "imap.gmail.com",
+          "port": 993,
+          "secure": true
+        },
+        "last_message_id": "",
+        "last_message_date": "",
+        "filters": []
+      }
     },
-    "smtp": {
-        "host": "smtp.gmail.com",
-        "ssl": true
+    {
+      "body": {
+        "id": "4",
+        "email": "elephantventurestester@gmail.com",
+        "password": "ereIamJH",
+        "token": "",
+        "worker_id": "",
+        "worker_ip": "",
+        "imap": {
+          "host": "imap.gmail.com",
+          "port": 993,
+          "secure": true
+        },
+        "last_message_id": "",
+        "last_message_date": "",
+        "filters": []
+      }
     }
+  ]
 }
+

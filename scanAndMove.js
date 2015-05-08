@@ -8,76 +8,26 @@ var notifier = require('mail-notifier')
 var filename = __dirname + "/config.json";
 var config = JSON.parse (fs.readFileSync(filename,'utf8'));
 var topUID, topUID2;
+var imapCollection = [];
 
 
-var usrInfo = {
-        user: config.username,
-        password: config.password,
-        host: config.imap.host,
-        port: config.imap.port,
-        markSeen: false,
-        //box: '[Gmail]/Spam',
-         tls: true,// use secure connection
-        tlsOptions: { rejectUnauthorized: false }
-};
 
-var usr1 = {
-	user: "elephantventurestester@gmail.com",
-    password: "ereIamJH",
-    host: "imap.gmail.com",
-    port: 993,
-    markSeen: false,
-    box: 'INBOX',
-     tls: true,// use secure connection
-    tlsOptions: { rejectUnauthorized: false }
-}
-
-var usr2 = {
-	user: "evdhtester@gmail.com",
-    password: "#Abc123!",
-    host: "imap.gmail.com",
-    port: 993,
-    markSeen: false,
-    box: '[Gmail]/Spam',
-     tls: true,// use secure connection
-    tlsOptions: { rejectUnauthorized: false }
-}
-
-var imap = new Imap(usr2);
-var imap2 = new Imap2(usr1);
-
-
-imap.once('ready', function() {
-	console.log("checking imap");
-    openImapMailbox('INBOX');
-});
-imap2.once('ready', function() {
-	console.log("checking imap2");
-    openImapMailbox2('INBOX');
-});
-
-function openImapMailbox(mailBox){
-	imap.openBox(mailBox, false, function(err, box) {
+function openImapMailbox(mailBox, imapcnct){
+	var imapcnct = imapcnct;
+	//console.log(imapcnct);
+	imapcnct.openBox(mailBox, false, function(err, box) {
 		//console.log(box);
-        searchForNewEmail(box); // initial search/process of data
-        imap.on('mail', function (id) {
-            searchForNewEmail(box);
+        searchForNewEmail(box, imapcnct); // initial search/process of data
+        imapcnct.on('mail', function (id) {
+            searchForNewEmail(box, imapcnct);
         });
     });
 }
 
-function openImapMailbox2(mailBox){
-	imap2.openBox(mailBox, false, function(err, box) {
-		//console.log(box);
-        searchForNewEmail2(box); // initial search/process of data
-        imap2.on('mail', function (id) {
-            searchForNewEmail2(box);
-        });
-    });
-}
 
-function searchForNewEmail(box) {
-    imap.search([box.messages.total + ':*'], function(err, results) {
+function searchForNewEmail(box, imapcnct) {
+	console.log(box.messages.total);
+    imapcnct.search([box.messages.total + ':*'], function(err, results) {
     	if (err) {
             console.log(err);
         }
@@ -85,7 +35,7 @@ function searchForNewEmail(box) {
             console.log('no new mail in INBOX');
             return;
         }
-        var f = imap.seq.fetch(results, { bodies: 'HEADER.FIELDS (TO FROM SUBJECT)', struct: true });
+        var f = imapcnct.seq.fetch(results, { bodies: 'HEADER.FIELDS (TO FROM SUBJECT)', struct: true });
         console.log("============================================");
         console.log("");
         console.log("SEARCHING " + box.name);
@@ -127,56 +77,6 @@ function searchForNewEmail(box) {
     });
 }
 
-function searchForNewEmail2(box) {
-    imap2.search([box.messages.total + ':*'], function(err, results) {
-    	if (err) {
-            console.log(err);
-        }
-        if (!results || results.length === 0) {
-            console.log('no new mail in INBOX');
-            return;
-        }
-        var f = imap2.fetch(results, { bodies: 'HEADER.FIELDS (TO FROM SUBJECT)', struct: true });
-        console.log("============================================");
-        console.log("");
-        console.log("SEARCHING " + box.name);
-        console.log("");
-        console.log("============================================");
-        f.on('message', function(msg, seqno) {
-        	var mp = new MailParser();
-        	var shouldMove, uid;
-        	mp.once('end', function (mail) {
-        		//console.log(mail.from);
-                console.log(mail.subject);
-                console.log("^^^^^");
-                if(mail.subject !== undefined && mail.subject.indexOf("move to spam") != -1){
-                	shouldMove = true;
-                	if(uid !== undefined){
-                		console.log("would move");
-                		//moveMail(uid,"[Gmail]/Spam");
-                	}
-                }
-            });
-            msg.once('attributes', function(attrs) {
-                uid = attrs.uid;
-                if (shouldMove === true){
-                	console.log("would move");
-                  //moveMail(uid,"[Gmail]/Spam");
-                }
-            });
-            msg.on('body', function(stream, info) {
-            	stream.pipe(mp);
-                var buffer = '';
-                stream.on('data', function(chunk) {
-                  //buffer += chunk.toString('utf8');
-                });
-                stream.once('end', function() {
-                    // do something with 'buffer'
-                });
-            });
-        });
-    });
-}
 
 function moveMail (uid, box) {
     console.log("====== move mail with: ");
@@ -189,5 +89,41 @@ function moveMail (uid, box) {
     //})
 }
 
-imap.connect(); // connect to imap
-imap2.connect(); // connect to imap
+//imap.connect(); // connect to imap
+//imap2.connect(); // connect to imap
+var dynImapInst = [];
+
+for(var v = 0; v < config.messages.length; v++){
+	//console.log(config.messages[v].body);
+	var order = config.messages[v].body;
+	var dynUsr = {
+		user: order.email,
+		password: order.password,
+		host: order.imap.host,
+		port: order.imap.port,
+		markSeen: false,
+		box: 'INBOX',
+		tls: true,
+		tlsOptions: {rejectUnauthorized: false}
+	}
+    //console.log(dynUsr);
+	var dynImap = require ('imap');
+	dynImapInst[order.email] = new dynImap(dynUsr);
+	imapCollection.push(dynImapInst[order.email]);
+
+	dynImapInst[order.email].once('ready', function(data) {
+        this.usr = dynUsr.user;
+        console.log("this user " + dynUsr.user);
+        console.log("data " + data);
+		console.log("checking imaps ");
+        //console.log(dynImapInst[this.foo]._sock.address());
+	    openImapMailbox('INBOX', dynImapInst[data]);
+	});
+    //console.log('+++++++++++   print events');
+    //console.log(dynImapInst[order.email]._events.ready.toString());
+    //console.log('-------------------');
+	//dynImapInst[order.email].connect();
+
+}
+console.log(dynImapInst);
+dynImapInst["evdhtester@gmail.com"].connect();
