@@ -104,20 +104,25 @@ for(var v = 0; v < config.messages.length; v++){
 		markSeen: false,
 		box: 'INBOX',
 		tls: true,
-		tlsOptions: {rejectUnauthorized: false}
+		tlsOptions: {rejectUnauthorized: false},
+
 	}
     //console.log(dynUsr);
 	var dynImap = require ('imap');
-	dynImapInst[order.email] = new dynImap(dynUsr);
+	//dynImapInst[order.email] = new dynImap(dynUsr);
+    dynImapInst[order.email] = {
+        dynImapThing: new dynImap(dynUser),
+        email: order.email
+    };
 	imapCollection.push(dynImapInst[order.email]);
 
-	dynImapInst[order.email].once('ready', function(data) {
-        this.usr = dynUsr.user;
-        console.log("this user " + dynUsr.user);
+	dynImapInst[order.email].dynImapThing.once('ready', function(data) {
+        //this.usr = dynUsr.user;
+        console.log("this user " + dynImapInst[order.email].email);
         console.log("data " + data);
 		console.log("checking imaps ");
         //console.log(dynImapInst[this.foo]._sock.address());
-	    openImapMailbox('INBOX', dynImapInst[data]);
+	    openImapMailbox('INBOX', dynImapInst[data].dynImapThing);
 	});
     //console.log('+++++++++++   print events');
     //console.log(dynImapInst[order.email]._events.ready.toString());

@@ -7,6 +7,6 @@
   "dependencies": {
     "imap": "^0.8.14",
     "mail-notifier": "^0.2.3",
-    "mailparser": "^0.4.6",
+    "mailparser": "^0.4.6"
   }
 }
